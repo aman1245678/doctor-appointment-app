@@ -19,7 +19,7 @@ const Dashboard = () => {
         }
     };
 
-    if (!dashData) {
+    if (!dashData || !appointments) {
         return (
             <div className="w-full max-w-7xl mx-auto p-6">
                 <div className="flex justify-center items-center h-64">
@@ -30,10 +30,10 @@ const Dashboard = () => {
     }
 
     // Corrected counting logic
-    const totalAppointments = appointments?.length || 0;
-    const activeAppointments = appointments?.filter(a => !a.cancelled).length || 0;
-    const cancelledAppointments = appointments?.filter(a => a.cancelled).length || 0;
-    const uniquePatients = new Set(appointments?.map(app => app.userData?._id)).size || 0;
+    const totalAppointments = appointments.length;
+    const activeAppointments = appointments.filter(a => !a.cancelled).length;
+    const cancelledAppointments = appointments.filter(a => a.cancelled).length;
+    const uniquePatients = new Set(appointments.map(app => app.userData?._id)).size;
 
     return (
         <div className='w-full max-w-7xl mx-auto p-4 md:p-6 space-y-6'>
@@ -65,23 +65,23 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Latest Bookings */}
+            {/* All Appointments */}
             <div className='bg-white rounded-2xl shadow-md border'>
                 <div className='flex items-center justify-between p-6 border-b'>
                     <div className='flex gap-2 items-center'>
                         <img src={assets.list_icon} alt="list" className="w-6 h-6" />
-                        <p className='font-semibold text-gray-800'>Latest Bookings</p>
+                        <p className='font-semibold text-gray-800'>All Appointments</p>
                     </div>
-                    <span className='text-sm text-gray-500'>{dashData.latestAppointments.length} recent appointments</span>
+                    <span className='text-sm text-gray-500'>{appointments.length} appointments</span>
                 </div>
 
                 <div>
-                    {dashData.latestAppointments.length === 0 ? (
+                    {appointments.length === 0 ? (
                         <div className="text-center py-10">
-                            <p className="text-gray-500">No recent appointments</p>
+                            <p className="text-gray-500">No appointments found</p>
                         </div>
                     ) : (
-                        dashData.latestAppointments.map((item, index) => (
+                        appointments.map((item, index) => (
                             <div key={index} className={`grid grid-cols-12 items-center gap-4 p-6 hover:bg-gray-50 ${item.cancelled ? 'bg-red-50' : ''}`}>
                                 <div className="col-span-1 hidden sm:block text-gray-400">{index + 1}</div>
 
