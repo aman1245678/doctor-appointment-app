@@ -56,7 +56,7 @@ const DoctorDashboard = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-center">
                         <div className="p-3 rounded-lg bg-blue-50 mr-4">
-                            <img className="w-8 h-8" src={assets.earning_icon} alt="Earnings" />
+                            <img className="w-8 h-8" src={assets.earning_icon_icon} alt="Earnings" />
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-500">Total Earnings</p>
