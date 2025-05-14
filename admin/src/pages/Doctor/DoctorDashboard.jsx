@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { DoctorContext } from '../../context/DoctorContext';
 import { assets } from '../../assets/assets';
 import { AppContext } from '../../context/AppContext';
@@ -9,10 +9,12 @@ const DoctorDashboard = () => {
         dashData,
         getDashData,
         completeAppointment,
-        cancelAppointment
+        cancelAppointment,
+        appointments // Get all appointments from context
     } = useContext(DoctorContext);
 
     const { currency, slotDateFormat } = useContext(AppContext);
+    const [showAllAppointments, setShowAllAppointments] = useState(false);
 
     useEffect(() => {
         if (dToken) {
@@ -20,7 +22,7 @@ const DoctorDashboard = () => {
         }
     }, [dToken]);
 
-    if (!dashData) {
+    if (!dashData || !appointments) {
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -28,8 +30,16 @@ const DoctorDashboard = () => {
         );
     }
 
+    // Calculate stats from all appointments
+    const totalEarnings = appointments
+        .filter(a => a.isCompleted && !a.cancelled)
+        .reduce((sum, a) => sum + (a.fee || 0), 0);
+
+    const totalPatients = new Set(appointments.map(a => a.userData?._id)).size;
+    const upcomingAppointments = appointments.filter(a => !a.isCompleted && !a.cancelled).length;
+
     return (
-        <div className="w-full max-w-7xl mx-auto p-6 bg-blue-400 rounded-xl shadow-lg overflow-hidden border border-gray-200">
+        <div className="w-full max-w-7xl mx-auto p-6 bg-blue-50 rounded-xl shadow-lg overflow-hidden border border-gray-200">
             {/* Dashboard Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-800 flex items-center">
@@ -38,7 +48,6 @@ const DoctorDashboard = () => {
                     </svg>
                     Doctor Dashboard
                 </h1>
-                <p className="text-gray-600 mt-1"></p>
             </div>
 
             {/* Stats Cards */}
@@ -51,7 +60,7 @@ const DoctorDashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-500">Total Earnings</p>
-                            <p className="text-2xl font-bold text-gray-800 mt-1">{currency}{dashData.earnings}</p>
+                            <p className="text-2xl font-bold text-gray-800 mt-1">{currency}{totalEarnings}</p>
                         </div>
                     </div>
                 </div>
@@ -64,7 +73,7 @@ const DoctorDashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-500">Total Appointments</p>
-                            <p className="text-2xl font-bold text-gray-800 mt-1">{dashData.appointments}</p>
+                            <p className="text-2xl font-bold text-gray-800 mt-1">{appointments.length}</p>
                         </div>
                     </div>
                 </div>
@@ -77,33 +86,48 @@ const DoctorDashboard = () => {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-500">Total Patients</p>
-                            <p className="text-2xl font-bold text-gray-800 mt-1">{dashData.patients}</p>
+                            <p className="text-2xl font-bold text-gray-800 mt-1">{totalPatients}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Latest Appointments */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            {/* Appointments Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 flex justify-between items-center">
                     <div className="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        <h2 className="text-lg font-semibold text-gray-800">Recent Appointments</h2>
+                        <h2 className="text-lg font-semibold text-gray-800">
+                            {showAllAppointments ? 'All Appointments' : 'Recent Appointments'}
+                        </h2>
                     </div>
+                    <button 
+                        onClick={() => setShowAllAppointments(!showAllAppointments)}
+                        className="text-sm text-indigo-600 hover:text-indigo-800"
+                    >
+                        {showAllAppointments ? 'Show Recent Only' : 'Show All Appointments'}
+                    </button>
                 </div>
 
                 <div className="divide-y divide-gray-200">
-                    {dashData.latestAppointments.length > 0 ? (
-                        dashData.latestAppointments.map((item, index) => (
+                    {(showAllAppointments ? appointments : dashData.latestAppointments).length > 0 ? (
+                        (showAllAppointments ? appointments : dashData.latestAppointments).map((item, index) => (
                             <div className="px-6 py-4 hover:bg-gray-50 transition-colors" key={index}>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center">
-                                        <img className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" src={item.userData.image} alt={item.userData.name} />
+                                        <img 
+                                            className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" 
+                                            src={item.userData.image || assets.default_user} 
+                                            alt={item.userData.name} 
+                                        />
                                         <div className="ml-4">
                                             <p className="text-sm font-medium text-gray-900">{item.userData.name}</p>
-                                            <p className="text-xs text-gray-500">{slotDateFormat(item.slotDate)} at {item.slotTime}</p>
+                                            <p className="text-xs text-gray-500">
+                                                {slotDateFormat(item.slotDate)} at {item.slotTime}
+                                                {item.fee && ` • Fee: ${currency}${item.fee}`}
+                                            </p>
                                         </div>
                                     </div>
                                     <div className="flex items-center">
@@ -146,7 +170,7 @@ const DoctorDashboard = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
-                            <h3 className="mt-2 text-lg font-medium text-gray-900">No recent appointments</h3>
+                            <h3 className="mt-2 text-lg font-medium text-gray-900">No appointments found</h3>
                             <p className="mt-1 text-sm text-gray-500">You don't have any appointments yet.</p>
                         </div>
                     )}
